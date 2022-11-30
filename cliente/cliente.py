@@ -45,7 +45,7 @@ class ClienteMODBUS():
                         sleep(self._scan_time)
 
                     elif op == '2':
-                        print()
+                        print(f"Leitura: {self.lerDado(int(op), int(addr))}")
 
                     else:
                         print("Seleção invalida")
@@ -58,10 +58,11 @@ class ClienteMODBUS():
                     addr = input(f"Digite o endereço da tabela MODBUS: ")
                     if op == '1':
                         valor = input(f"Digite o valor que deseja escrever: ")
-                        self.escreveDado(1, int(addr), float(valor))
+                        self.escreveDado(1, int(addr), float(valor),0)
 
                     elif op == '2':
                         valor = input(f"Digite a string que deseja escrever: ")
+                        self.escreveDado(2, int(addr), str(valor), len(str(valor)))
 
                     else:
                         print("Seleção invalida")
@@ -89,7 +90,9 @@ class ClienteMODBUS():
             #return self._cliente.read_holding_registers(addr,1)[0]
 
         if tipo == 2:  #String
-            return self._cliente.read_coils(addr, 1)[0]
+            leitura = self._cliente.read_holding_registers(addr, 2)
+            decoder = BinaryPayloadDecoder.fromRegisters(leitura)
+            return decoder.decode_string(8)
 
         # if tipo == 1:
         #     return self._cliente.read_input_registers(addr,1)[0]
@@ -97,7 +100,7 @@ class ClienteMODBUS():
         # if tipo == 1:
         #     return self._cliente.read_discrete_inputs(addr,1)[0]
 
-    def escreveDado(self, tipo, addr, valor):
+    def escreveDado(self, tipo, addr, valor, tamStr):
         """
         Método para a escrita de dados na Tabela MODBUS
         """
@@ -107,5 +110,8 @@ class ClienteMODBUS():
             payload = builder.to_registers()
             return self._cliente.write_multiple_registers(addr, payload)
 
-        # if tipo == 2: #String
-        #     return self._cliente.write_single_coil(addr,valor)
+        elif tipo == 2: #String
+            builder = BinaryPayloadBuilder()
+            builder.add_string(valor)
+            payload = builder.to_registers()
+            return self._cliente.write_multiple_registers(addr, payload)
