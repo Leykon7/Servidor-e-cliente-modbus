@@ -26,13 +26,13 @@ class ClienteMODBUS():
             while atendimento:
 
                 sel = input(
-                    "Deseja realizar uma leitura, escrita ou configuração? (1- Leitura | 2- Escrita | 3- Configuração |4- Sair): "
+                    "\nDeseja realizar uma leitura, escrita ou configuração? (1- Leitura | 2- Escrita | 3- Configuração |4- Sair): "
                 )
 
                 if sel == '1':
 
                     op = input(
-                        """Qual tipo de dado deseja ler? (1- float |2- string): """
+                        """\nQual tipo de dado deseja ler? (1- float |2- string): """
                     )
                     addr = input(f"Digite o endereço da tabela MODBUS: ")
 
@@ -53,7 +53,7 @@ class ClienteMODBUS():
                 elif sel == '2':
 
                     op = input(
-                        """Qual tipo de dado deseja escrever? (1- float | 2- string): """
+                        """\nQual tipo de dado deseja escrever? (1- float | 2- string): """
                     )
                     addr = input(f"Digite o endereço da tabela MODBUS: ")
                     if op == '1':
@@ -62,7 +62,7 @@ class ClienteMODBUS():
 
                     elif op == '2':
                         valor = input(f"Digite a string que deseja escrever: ")
-                        self.escreveDado(2, int(addr), str(valor), len(str(valor)))
+                        self.escreveDado(2, int(addr), str(valor), int(len(str(valor))))
 
                     else:
                         print("Seleção invalida")
@@ -90,9 +90,11 @@ class ClienteMODBUS():
             #return self._cliente.read_holding_registers(addr,1)[0]
 
         if tipo == 2:  #String
-            leitura = self._cliente.read_holding_registers(addr, 2)
+            tamStr = self._cliente.read_holding_registers(int(addr)-1,2)[0]
+            leitura = self._cliente.read_holding_registers(addr, tamStr)
             decoder = BinaryPayloadDecoder.fromRegisters(leitura)
-            return decoder.decode_string(8)
+            #tamStr = int(tamStr)
+            return str(decoder.decode_string(tamStr))[1:]
 
         # if tipo == 1:
         #     return self._cliente.read_input_registers(addr,1)[0]
@@ -111,6 +113,7 @@ class ClienteMODBUS():
             return self._cliente.write_multiple_registers(addr, payload)
 
         elif tipo == 2: #String
+            self._cliente.write_single_register(addr-1,tamStr)
             builder = BinaryPayloadBuilder()
             builder.add_string(valor)
             payload = builder.to_registers()
